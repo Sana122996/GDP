@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>31省市34年GDP变化 - 终极修复版</title>
+    <title>31省市34年GDP变化 - 终极演示</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
     
@@ -59,19 +59,13 @@
 
         .header-right { margin-left: 15px; }
 
-        /* 您的Logo区域 */
         .logo-box {
             width: 40px;
             height: 40px;
-            background: #f0f2f5;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            color: #999;
-            font-weight: bold;
-            border: 1px dashed #ccc;
+            /* 这是一个数据图表样式的Logo，您可以替换为 img 标签 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23f0f2f5' stroke='%232c3e50' stroke-width='5'/%3E%3Cpath d='M30 70 L30 40 L50 20 L70 40 L70 70 Z' fill='%234472c4'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
         }
 
         #chart-container { flex: 1; width: 100%; padding: 10px 15px 0 0; }
@@ -81,11 +75,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 15px; /* 按钮之间的间距 */
             background: #fff;
             border-top: 1px solid #eee;
             flex-shrink: 0;
         }
 
+        /* 播放按钮 */
         #play-btn {
             background: #2c3e50;
             color: #fff;
@@ -103,13 +99,26 @@
             gap: 8px;
             letter-spacing: 1px;
         }
+        #play-btn:active { transform: scale(0.96); }
+        #play-btn.replay { background: #27ae60; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3); }
 
-        #play-btn:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(44, 62, 80, 0.2); }
-
-        #play-btn.replay {
-            background: #27ae60;
-            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        /* 分享按钮 */
+        #share-btn {
+            background: #f0f2f5;
+            color: #2c3e50;
+            border: 1px solid #dcdfe6;
+            padding: 10px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
+        #share-btn:active { background: #e0e4e8; transform: scale(0.96); }
+        #share-btn svg { width: 18px; height: 18px; fill: #2c3e50; }
 
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #aaa; font-size: 12px; }
     </style>
@@ -123,7 +132,7 @@
                 <h2>数据来源：国家统计局（单位：亿元）</h2>
             </div>
             <div class="header-right">
-                <div class="logo-box">LOGO</div>
+                <div class="logo-box" title="Logo"></div>
             </div>
         </header>
 
@@ -135,26 +144,30 @@
                 <span id="btn-icon">❚❚</span> 
                 <span id="btn-text">暂停</span>
             </button>
+            <button id="share-btn" title="复制链接">
+                <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
         </div>
     </div>
 
     <script>
         var myChart = echarts.init(document.getElementById('chart-container'));
         var playBtn = document.getElementById('play-btn');
+        var shareBtn = document.getElementById('share-btn');
         var btnIcon = document.getElementById('btn-icon');
         var btnText = document.getElementById('btn-text');
         
         // =================================================================
-        // 手写播放引擎变量
+        // 手写播放引擎 (解决暂停失效问题)
         // =================================================================
         var timer = null;          
         var currentIndex = 0;      
         var isPlaying = true;      
         var isEnded = false;       
-        var playSpeed = 800;      // 播放间隔调整为800ms，速度更快
+        var playSpeed = 400;      // 【修改】速度调快到 400ms
 
         // =================================================================
-        // 核心数据 (湖北2020=-5.4%, 广东1995=5983.8, 小数点完全保留)
+        // 核心数据 (精准数据：1995广东=5983.8, 2020湖北增速=-5.4%)
         // =================================================================
         const years = [1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
         
@@ -167,7 +180,7 @@
             options.push({
                 title: { 
                     text: year + '年', 
-                    right: '10%', bottom: '5%', 
+                    right: '10%', bottom: '5%', // 年份对齐右下角
                     textStyle: { fontSize: 24, color: '#bdc3c7', fontWeight: '900', fontFamily: 'Noto Serif SC' } 
                 },
                 series: [
@@ -212,7 +225,8 @@
                                 var rate = params.data.rate;
                                 var style = parseFloat(rate) >= 0 ? '{red|' : '{green|';
                                 var icon = parseFloat(rate) >= 0 ? '▲' : '▼'; 
-                                return params.value.toFixed(1) + '  ' + style + icon + ' ' + Math.abs(rate) + '%}';
+                                // 【强制保留一位小数】
+                                return params.value.toFixed(1) + '  ' + style + icon + ' ' + Math.abs(rate).toFixed(1) + '%}';
                             },
                             rich: {
                                 red: { color: '#e74c3c', fontWeight: 'bold' },
@@ -228,7 +242,7 @@
             baseOption: {
                 timeline: {
                     axisType: 'category',
-                    autoPlay: false, // 【绝对禁止】ECharts自动播放，完全由JS接管
+                    autoPlay: false, // 禁止ECharts自动播放
                     playInterval: playSpeed,
                     loop: false,
                     data: years,
@@ -238,7 +252,7 @@
                     lineStyle: { color: '#eee', width: 1 },
                     itemStyle: { color: '#ddd' },
                     checkpointStyle: { color: '#34495e', borderWidth: 0 },
-                    controlStyle: { show: false } // 隐藏自带按钮
+                    controlStyle: { show: false } 
                 },
                 grid: {
                     top: 10, bottom: 20, 
@@ -250,7 +264,7 @@
                 yAxis: {
                     type: 'category',
                     inverse: true,
-                    max: 33,
+                    max: 33, // 显示全部34个
                     axisTick: { show: false },
                     axisLine: { show: false },
                     axisLabel: { show: false }, 
@@ -273,7 +287,7 @@
         document.getElementById('loading').style.display = 'none';
 
         // =================================================================
-        // 核弹级手动播放引擎 (完全脱离 ECharts Timeline 控制)
+        // 手动播放核心逻辑
         // =================================================================
         
         function startPlay() {
@@ -282,22 +296,20 @@
             btnText.innerHTML = '暂停';
             
             timer = setInterval(function() {
-                // 1. 计算下一帧
                 currentIndex++;
                 
-                // 2. 检查是否结束
+                // 播放结束判断
                 if (currentIndex >= years.length) {
-                    stopPlay(); // 停止定时器
+                    stopPlay(); 
                     isEnded = true;
                     isPlaying = false;
-                    // 变为重播样式
                     playBtn.classList.add('replay');
                     btnIcon.innerHTML = '↺';
                     btnText.innerHTML = '重新播放';
                     return;
                 }
 
-                // 3. 驱动图表
+                // 驱动每一帧
                 myChart.dispatchAction({
                     type: 'timelineChange',
                     currentIndex: currentIndex
@@ -315,21 +327,19 @@
             btnText.innerHTML = '继续';
         }
 
-        // 按钮点击逻辑
+        // 播放按钮点击逻辑
         playBtn.onclick = function() {
             if (isEnded) {
-                // --- 场景1：重新播放 ---
-                currentIndex = 0; // 重置
+                // 重新播放
+                currentIndex = 0; 
                 isEnded = false;
                 isPlaying = true;
                 playBtn.classList.remove('replay');
-                
-                // 归位
                 myChart.dispatchAction({ type: 'timelineChange', currentIndex: 0 });
-                // 启动
-                startPlay();
+                // 稍微延迟启动以防UI跳变
+                setTimeout(startPlay, 50);
             } else {
-                // --- 场景2：暂停/继续 ---
+                // 暂停/继续
                 if (isPlaying) {
                     stopPlay();
                     isPlaying = false;
@@ -340,21 +350,24 @@
             }
         };
 
-        // 允许用户手动拖拽进度条 (同步状态)
+        // 分享按钮点击逻辑
+        shareBtn.onclick = function() {
+            var url = window.location.href;
+            navigator.clipboard.writeText(url).then(function() {
+                alert("网页链接已复制到剪贴板！\n您可以发送给朋友了。");
+            }, function() {
+                alert("复制失败，请手动复制浏览器地址栏。");
+            });
+        };
+
+        // 监听时间轴拖动（同步状态）
         myChart.on('timelinechanged', function(params) {
-            // 这里只处理用户手动拖拽的情况，避免和定时器冲突
-            // 我们通过对比 index 差异来判断是否是用户行为（定时器是 +1 递增）
-            // 但为了简单稳定，只要 index 变了，我们就同步一下 currentIndex
-            // 如果用户拖到了最后，触发结束逻辑
-            
-            // 注意：myChart.dispatchAction 也会触发这个事件，所以要小心死循环
-            // 我们的策略是：定时器驱动时，这个事件也会触发，我们只需更新 currentIndex 即可
-            // 如果用户手动拖拽，currentIndex 也会更新，下次定时器会基于新位置继续
-            
+            // 如果是定时器触发的，index只会+1，如果是手动拖拽，index可能会大变
+            // 只要 index 变了，我们同步它
             currentIndex = params.currentIndex;
 
             if (currentIndex === years.length - 1 && !isEnded) {
-                // 如果用户手动拖到了最后
+                // 手动拖到了最后
                 stopPlay();
                 isEnded = true;
                 isPlaying = false;
@@ -362,15 +375,15 @@
                 btnIcon.innerHTML = '↺';
                 btnText.innerHTML = '重新播放';
             } else if (isEnded && currentIndex < years.length - 1) {
-                // 用户把进度条往回拖了
+                // 从最后往回拖
                 isEnded = false;
                 playBtn.classList.remove('replay');
-                stopPlay(); // 拖动后默认暂停，等待用户点击继续
+                stopPlay(); 
                 isPlaying = false;
             }
         });
 
-        // 初始化启动
+        // 页面加载即启动
         startPlay();
 
         window.addEventListener('resize', () => myChart.resize());
