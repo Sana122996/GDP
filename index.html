@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>31省市34年GDP变化 - 定制版</title>
+    <title>31省市34年GDP变化 - 最终定稿</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
     
@@ -41,7 +41,7 @@
             z-index: 10;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: center; /* 垂直居中对齐 */
         }
 
         .header-left { display: flex; flex-direction: column; }
@@ -49,7 +49,7 @@
         h1 {
             font-family: 'Noto Serif SC', serif;
             font-weight: 900;
-            font-size: 22px;
+            font-size: 22px; /* 标题高度 */
             color: #2c3e50;
             margin-bottom: 4px;
             line-height: 1.2;
@@ -59,64 +59,61 @@
 
         .header-right { margin-left: 15px; }
 
+        /* 【修改点1】Logo高度调整为24px，与左侧标题视觉对齐 */
         .logo-img {
-            height: 40px;
+            height: 24px; 
             width: auto;
             display: block;
         }
 
         #chart-container { flex: 1; width: 100%; padding: 10px 15px 0 0; }
 
-        /* 底部控制栏布局修改：左右分开 */
         .controls {
             height: 65px;
             display: flex;
             align-items: center;
-            justify-content: space-between; /* 关键：两端对齐 */
-            padding: 0 25px; /* 增加左右内边距 */
+            justify-content: space-between; 
+            padding: 0 25px;
             background: #fff;
             border-top: 1px solid #eee;
             flex-shrink: 0;
         }
 
-        /* 播放按钮 (左侧) */
-        #play-btn {
-            background: #2c3e50;
-            color: #fff;
+        /* 统一的按钮基础样式 */
+        .btn-style {
             border: none;
-            padding: 10px 36px;
-            font-size: 15px;
+            padding: 10px 24px;
+            font-size: 14px;
             font-family: 'Noto Sans SC', sans-serif;
             font-weight: 700;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.25);
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 8px;
-            letter-spacing: 1px;
+            gap: 6px;
+            letter-spacing: 0.5px;
         }
-        #play-btn:active { transform: scale(0.96); }
+        .btn-style:active { transform: scale(0.96); }
+
+        /* 播放按钮 (深色) */
+        #play-btn {
+            background: #2c3e50;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.25);
+        }
         #play-btn.replay { background: #27ae60; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3); }
 
-        /* 分享按钮 (右侧) */
+        /* 【修改点2】分享按钮 (浅色，带文字) */
         #share-btn {
             background: #f0f2f5;
             color: #2c3e50;
             border: 1px solid #dcdfe6;
-            padding: 10px;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+            /* 去掉 width: 42px，改为自动宽度 */
+            width: auto; 
         }
-        #share-btn:active { background: #e0e4e8; transform: scale(0.96); }
-        #share-btn svg { width: 18px; height: 18px; fill: #2c3e50; }
+        #share-btn svg { width: 16px; height: 16px; fill: #2c3e50; }
+        #share-btn:hover { background: #e6e8eb; }
 
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #aaa; font-size: 12px; }
     </style>
@@ -138,13 +135,14 @@
         <div id="chart-container"></div>
 
         <div class="controls">
-            <button id="play-btn">
+            <button id="play-btn" class="btn-style">
                 <span id="btn-icon">❚❚</span> 
                 <span id="btn-text">暂停</span>
             </button>
             
-            <button id="share-btn" title="复制链接">
+            <button id="share-btn" class="btn-style" title="复制链接">
                 <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                <span>分享链接</span>
             </button>
         </div>
     </div>
@@ -163,7 +161,7 @@
         var playSpeed = 400;      // 播放速度 400ms
 
         // =================================================================
-        // 核心数据 (1995广东=5983.8, 2020湖北增速=-5.4%)
+        // 核心数据 (精准版：1995广东=5983.8)
         // =================================================================
         const years = [1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
         
@@ -186,7 +184,7 @@
                         seriesLayoutBy: 'column',
                         type: 'bar',
                         itemStyle: {
-                            color: '#5A82E6', // 统一使用指定的蓝色
+                            color: '#5A82E6', // 【修改】统一蓝色
                             borderRadius: [0, 4, 4, 0]
                         },
                         label: {
@@ -212,13 +210,12 @@
                             position: 'right', 
                             fontFamily: 'Noto Sans SC',
                             fontWeight: 'bold',
-                            fontSize: 14, // 主数值字体
+                            fontSize: 14,
                             color: '#555',
                             formatter: function (params) {
                                 var rate = params.data.rate;
                                 var style = parseFloat(rate) >= 0 ? '{red|' : '{green|';
                                 var icon = parseFloat(rate) >= 0 ? '▲' : '▼'; 
-                                // 主数值(14px) + 涨跌幅(10px)
                                 return params.value.toFixed(1) + '  ' + style + icon + ' ' + Math.abs(rate).toFixed(1) + '%}';
                             },
                             rich: {
