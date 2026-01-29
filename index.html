@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>31省市34年GDP变化 - 终极版</title>
+    <title>31省市34年GDP变化 - 演示版</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
     
@@ -20,25 +20,35 @@
             overflow: hidden;
         }
 
-        /* 模拟手机屏幕比例的容器 */
         #app-frame {
-            width: 420px; /* 标准手机宽度 */
-            height: 95vh; /* 拉长高度以容纳34条数据 */
+            width: 450px;
+            height: 95vh;
             max-height: 900px;
             background: #fff;
             border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
+            border: 1px solid #e1e4e8;
         }
 
+        /* 头部布局改为 Flex，左右分开 */
         header {
-            padding: 15px 20px;
+            padding: 20px 25px;
             background: #fff;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0f0f0;
             z-index: 10;
+            display: flex;
+            justify-content: space-between; /* 两端对齐 */
+            align-items: center; /* 垂直居中 */
+        }
+
+        /* 左侧文字区域 */
+        .header-left {
+            display: flex;
+            flex-direction: column;
         }
 
         h1 {
@@ -47,23 +57,38 @@
             font-size: 22px;
             color: #2c3e50;
             margin-bottom: 4px;
+            line-height: 1.2;
         }
 
         h2 {
             font-size: 11px;
             color: #7f8c8d;
-            font-weight: 400;
+            font-weight: 500;
+        }
+
+        /* 右侧 Logo 区域 */
+        .header-right {
+            margin-left: 15px;
+        }
+
+        .logo-img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            /* 这是一个通用的数据图标，您可以把 src 换成您自己的 logo 图片链接 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='10' y='60' width='20' height='30' fill='%234472c4' rx='4' /%3E%3Crect x='40' y='30' width='20' height='60' fill='%232c56a1' rx='4' /%3E%3Crect x='70' y='10' width='20' height='80' fill='%23e74c3c' rx='4' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
         }
 
         #chart-container {
             flex: 1;
             width: 100%;
-            /* 上下留白，防止切断 */
-            padding: 10px 10px 0 0; 
+            padding: 10px 15px 0 0; 
         }
 
         .controls {
-            height: 60px;
+            height: 65px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -73,28 +98,28 @@
         }
 
         #play-btn {
-            background: #34495e;
+            background: #2c3e50;
             color: #fff;
             border: none;
-            padding: 8px 32px;
-            font-size: 14px;
+            padding: 10px 36px;
+            font-size: 15px;
             font-family: 'Noto Sans SC', sans-serif;
             font-weight: 700;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3);
-            transition: transform 0.1s, background 0.3s;
+            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.25);
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            letter-spacing: 1px;
         }
 
-        #play-btn:active { transform: scale(0.96); }
+        #play-btn:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(44, 62, 80, 0.2); }
 
-        /* 重新播放绿色样式 */
         #play-btn.replay {
             background: #27ae60;
-            box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
         }
 
         #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #aaa; font-size: 12px; }
@@ -104,8 +129,13 @@
 
     <div id="app-frame">
         <header>
-            <h1>31省市34年GDP变化</h1>
-            <h2>数据来源：国家统计局 / 竞赛演示</h2>
+            <div class="header-left">
+                <h1>31省市34年GDP变化</h1>
+                <h2>数据来源：国家统计局（单位：亿元）</h2>
+            </div>
+            <div class="header-right">
+                <div class="logo-img"></div>
+            </div>
         </header>
 
         <div id="loading">正在装填数据...</div>
@@ -125,12 +155,13 @@
         var btnIcon = document.getElementById('btn-icon');
         var btnText = document.getElementById('btn-text');
         
-        // --- 播放控制状态机 ---
-        var isPlaying = true; // 初始状态为播放
+        // --- 核心播放状态控制 ---
+        // 默认为 true，因为 ECharts 初始化 autoPlay: true
+        var isPlaying = true; 
         var isEnded = false;
 
         // =================================================================
-        // 核心数据 (1995年广东=5983.8, 已校验)
+        // 核心数据 (精准数据版：1995广东=5983.8, 1996山西=11.8%)
         // =================================================================
         const years = [1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
         
@@ -282,8 +313,8 @@
         // 按钮点击事件
         playBtn.onclick = function() {
             if (isEnded) {
-                // 【重新播放】
-                // 1. 跳回起点
+                // 【重新播放逻辑】
+                // 1. 先跳回起点
                 myChart.dispatchAction({ type: 'timelineChange', currentIndex: 0 });
                 // 2. 延迟启动播放，确保UI复位
                 setTimeout(function() {
@@ -296,7 +327,7 @@
                 btnIcon.innerHTML = '❚❚';
                 btnText.innerHTML = '暂停';
             } else {
-                // 【播放/暂停切换】
+                // 【正常播放/暂停切换】
                 if (isPlaying) {
                     // 暂停
                     myChart.dispatchAction({ type: 'timelineStop' });
